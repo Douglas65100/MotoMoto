@@ -12,7 +12,7 @@ jobs:
         working-directory: backend
 
     services:
-      mariadb:
+      mariadb: 
         image: mariadb:12.1.2
         env:
           MARIADB_ROOT_PASSWORD: toor
@@ -21,6 +21,7 @@ jobs:
           MARIADB_PASSWORD: test
         ports:
           - 3306:3306
+        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=10s --health-timeout=5s --health-retries=3
 
     env:
       BDD_HOST: 127.0.0.1
@@ -45,10 +46,12 @@ jobs:
       - name: Install Dep
         run: npm i
 
-      - name: Init and Populate BDD
-        run: |
-          npm run initbdd
-          npm run populate
+      - name: Init  BDD
+        run: npm run initbdd
+          
+      - name: Populate BDD
+        run : |
+          mysql -u root -ptoor --host 127.0.0.1 --port 3306 --database test < ./test/insert_test_user.sql
 
       - name: Run test and coverage
         run: npm run test:cov
@@ -60,7 +63,7 @@ jobs:
           path: backend/coverage
           retention-days: 1
 
-  Frontend: 
+  Frontend:
     needs: [Backend]
     runs-on: ubuntu-latest
     defaults:
@@ -69,7 +72,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@4
+        uses: actions/checkout@v4
 
       - name: Start Backend
         run: |
@@ -100,7 +103,7 @@ jobs:
       - name: Install Dep
         run: npm i
 
-      - name: Cypress E2E Install
+      - name: Cypress E2E TEST
         uses: cypress-io/github-action@v6
         with:
           install: false
@@ -125,7 +128,7 @@ jobs:
           name: cypress-videos
           path: frontend/cypress/videos
           retention-days: 1
-      
+
       - name: Upload Coverage report
         uses: actions/upload-artifact@v4
         with:
